@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Croazt/shopifyx/db/connection"
+	"github.com/Croazt/shopifyx/db/migrations"
 	"github.com/Croazt/shopifyx/routes"
 	"github.com/fasthttp/router"
 	"github.com/joho/godotenv"
@@ -19,16 +21,30 @@ import (
 var db *sql.DB
 
 func main() {
-	var err error
+	var (
+		err            error
+		migrateCommand string
+	)
+
+	flag.StringVar(&migrateCommand, "migrate", "up", "migration")
+	flag.Parse()
+
 	if godotenv.Load() != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("error loading .env file")
 	}
 
 	db, err = connection.OpenPg()
 	if err != nil {
-		log.Fatalf("Error connecting to database: %v", err)
+		log.Fatalf("error connecting to database: %v", err)
 	}
 	defer db.Close()
+
+	if migrateCommand != "" {
+		err = migrations.Migrate(db, migrateCommand)
+		if err != nil {
+			log.Fatalf("error migrating to schema: %v", err)
+		}
+	}
 
 	r := router.New()
 
@@ -44,7 +60,7 @@ func main() {
 
 	go func() {
 		if err := s.ListenAndServe(":8000"); err != nil {
-			log.Fatalf("Error in ListenAndServe: %s", err)
+			log.Fatalf("error in ListenAndServe: %s", err)
 		}
 	}()
 
@@ -52,9 +68,9 @@ func main() {
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	<-sig
 
-	fmt.Println("Shutting down gracefully...")
+	fmt.Println("shutting down gracefully...")
 	if err := s.Shutdown(); err != nil {
-		log.Fatalf("Error in Server Shutdown: %s", err)
+		log.Fatalf("error in Server Shutdown: %s", err)
 	}
-	fmt.Println("Server stopped")
+	fmt.Println("server stopped")
 }
