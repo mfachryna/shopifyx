@@ -57,6 +57,7 @@ func main() {
 	}
 
 	routes.AuthRoute(r, db)
+	routes.ImageRoute(r)
 
 	go func() {
 		if err := s.ListenAndServe(":8000"); err != nil {

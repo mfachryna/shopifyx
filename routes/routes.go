@@ -12,3 +12,7 @@ func AuthRoute(r *router.Router, db *sql.DB) {
 	r.POST("/register", authHandler.Register)
 	r.POST("/login", authHandler.Login)
 }
+func ImageRoute(r *router.Router) {
+	imageHandler := handler.NewImageHandler()
+	r.POST("/image", imageHandler.Store)
+}
