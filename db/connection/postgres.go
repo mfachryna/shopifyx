@@ -26,7 +26,7 @@ func OpenPg() (*sql.DB, error) {
 	}
 
 	connStr := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s",
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		conf.DbUsername,
 		conf.DbPassword,
 		conf.DbHost,
