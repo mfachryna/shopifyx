@@ -12,7 +12,11 @@ type UserRegister struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
-type UserRegisterResponse struct {
+type UserLogin struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+type UserAuthResponse struct {
 	Name        string `json:"name"`
 	Username    string `json:"username"`
 	AccessToken string `json:"accessToken"`

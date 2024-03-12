@@ -12,10 +12,17 @@ type Success struct {
 	Data       interface{} `json:"data"`
 }
 
-func RegisterResponse(user *domain.UserRegisterResponse) Success {
+func RegisterResponse(user *domain.UserAuthResponse) Success {
 	return Success{
 		HttpStatus: http.StatusCreated,
-		Message:    "User registered successfully ",
+		Message:    "User registered successfully",
+		Data:       user,
+	}
+}
+func LoginResponse(user *domain.UserAuthResponse) Success {
+	return Success{
+		HttpStatus: http.StatusOK,
+		Message:    "User logged successfully",
 		Data:       user,
 	}
 }

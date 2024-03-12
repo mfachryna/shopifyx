@@ -10,7 +10,7 @@ import (
 
 type Claim struct {
 	jwt.StandardClaims
-	UserId int `json:"user_id"`
+	UserId string `json:"user_id"`
 }
 
 type JWTToken struct {

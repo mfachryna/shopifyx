@@ -7,6 +7,12 @@ type Error struct {
 	Message    string `json:"message"`
 }
 
+func CustomError(status int, message string) Error {
+	return Error{
+		HttpStatus: status,
+		Message:    message,
+	}
+}
 func ClientBadRequest() Error {
 	return Error{
 		HttpStatus: http.StatusBadRequest,
@@ -14,10 +20,10 @@ func ClientBadRequest() Error {
 	}
 }
 
-func ClientNotFound() Error {
+func ClientNotFound(resourceName string) Error {
 	return Error{
 		HttpStatus: http.StatusNotFound,
-		Message:    "request resource not found",
+		Message:    resourceName + " not found",
 	}
 }
 
