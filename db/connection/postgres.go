@@ -16,7 +16,7 @@ type Config struct {
 	DbPassword string
 }
 
-func openPg() (*sql.DB, error) {
+func OpenPg() (*sql.DB, error) {
 	conf := Config{
 		DbHost:     os.Getenv("DB_HOST"),
 		DbName:     os.Getenv("DB_NAME"),
@@ -37,18 +37,4 @@ func openPg() (*sql.DB, error) {
 	db, err := sql.Open("postgres", connStr)
 
 	return db, err
-}
-
-func SetupPg() *sql.DB {
-	db, err := openPg()
-	if err != nil {
-		return nil
-	}
-
-	err = db.Ping()
-
-	if err != nil {
-		return nil
-	}
-	return db
 }
