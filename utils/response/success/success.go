@@ -3,7 +3,7 @@ package error
 import (
 	"net/http"
 
-	"github.com/Croazt/shopifyx/repository"
+	"github.com/Croazt/shopifyx/domain"
 )
 
 type Success struct {
@@ -12,7 +12,7 @@ type Success struct {
 	Data       interface{} `json:"data"`
 }
 
-func RegisterResponse(user *repository.UserRegister) Success {
+func RegisterResponse(user *domain.UserRegisterResponse) Success {
 	return Success{
 		HttpStatus: http.StatusCreated,
 		Message:    "User registered successfully ",

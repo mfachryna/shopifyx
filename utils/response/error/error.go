@@ -66,7 +66,7 @@ func ClientInactiveUser() Error {
 func ClientAlreadyExists() Error {
 	return Error{
 		HttpStatus: http.StatusConflict,
-		Message:    "email is already exists",
+		Message:    "username is already exists",
 	}
 }
 
@@ -74,5 +74,11 @@ func ServerError() Error {
 	return Error{
 		HttpStatus: http.StatusInternalServerError,
 		Message:    "server has internal error",
+	}
+}
+func CustomServerError(message string) Error {
+	return Error{
+		HttpStatus: http.StatusInternalServerError,
+		Message:    message,
 	}
 }
