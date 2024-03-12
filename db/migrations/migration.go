@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	migrationFileLocation = "file://db/schema"
+	migrationFileLocation = "file://db/migrations"
 	MIGRATION_CMD_UP      = "up"
 	MIGRATION_CMD_DOWN    = "down"
 )
