@@ -172,3 +172,52 @@ func (ph *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		},
 	))
 }
+
+func (ph *ProductHandler) Stock(w http.ResponseWriter, r *http.Request) {
+	var (
+		id    string
+		stock int64
+	)
+	userId := r.Context().Value("user_id").(string)
+
+	productId := chi.URLParam(r, "productId")
+	if productId == "" {
+		response.Error(w, apierror.ClientBadRequest())
+		return
+	}
+
+	err := ph.db.QueryRow("SELECT user_id FROM products WHERE id = $1", productId).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			response.Error(w, apierror.ClientNotFound("product"))
+			return
+		}
+
+		response.Error(w, apierror.CustomServerError(err.Error()))
+		return
+	}
+
+	if id != userId {
+		response.Error(w, apierror.ClientForbidden())
+		return
+	}
+
+	err = ph.db.QueryRow("SELECT stock FROM products WHERE id = $1", productId).Scan(&stock)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			response.Error(w, apierror.ClientNotFound("product"))
+			return
+		}
+
+		response.Error(w, apierror.CustomServerError(err.Error()))
+		return
+	}
+
+	type Stock struct {
+		Stock int64 `json:"stock"`
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(Stock{Stock: stock})
+}

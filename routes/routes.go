@@ -30,6 +30,7 @@ func ProductRoute(r chi.Router, db *sql.DB, validator *validator.Validate) {
 	r.Route("/product", func(r chi.Router) {
 		r.Use(middleware.JwtMiddleware)
 		r.Post("/", productHandler.Create)
+		r.Get("/{productId}/stock", productHandler.Stock)
 		r.Patch("/{productId}", productHandler.Update)
 		r.Delete("/{productId}", productHandler.Delete)
 	})
