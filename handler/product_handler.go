@@ -72,9 +72,8 @@ func (ph *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (ph *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var (
-		data  domain.Product
-		id    string
-		count int
+		data domain.Product
+		id   string
 	)
 
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
@@ -97,14 +96,14 @@ func (ph *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := ph.db.QueryRow("SELECT COUNT(id), p.user_id FROM products p WHERE id = $1 GROUP BY p.user_id", productId).Scan(&count, &id)
+	err := ph.db.QueryRow("SELECT user_id FROM products WHERE id = $1", productId).Scan(&id)
 	if err != nil {
-		response.Error(w, apierror.CustomServerError(err.Error()))
-		return
-	}
+		if err == sql.ErrNoRows {
+			response.Error(w, apierror.ClientNotFound("product"))
+			return
+		}
 
-	if count == 0 {
-		response.Error(w, apierror.ClientNotFound("product"))
+		response.Error(w, apierror.CustomServerError(err.Error()))
 		return
 	}
 
