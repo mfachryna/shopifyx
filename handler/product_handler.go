@@ -11,6 +11,7 @@ import (
 	apierror "github.com/Croazt/shopifyx/utils/response/error"
 	apisuccess "github.com/Croazt/shopifyx/utils/response/success"
 	"github.com/Croazt/shopifyx/utils/validation"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -43,6 +44,7 @@ func (ph *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
 	userId := r.Context().Value("user_id").(string)
 	if userId == "" {
 		response.Error(w, apierror.CustomServerError("userId not found in context"))
@@ -64,6 +66,67 @@ func (ph *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.Success(w, apisuccess.CustomResponse(
 		http.StatusCreated,
 		"product added successfully",
+		data,
+	))
+}
+
+func (ph *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
+	var (
+		data  domain.Product
+		id    string
+		count int
+	)
+
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		response.Error(w, apierror.ClientBadRequest())
+		return
+	}
+
+	if err := ph.validate.Struct(data); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		for _, e := range validationErrors {
+			response.Error(w, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
+			return
+		}
+	}
+
+	userId := r.Context().Value("user_id").(string)
+	productId := chi.URLParam(r, "productId")
+	if productId == "" {
+		response.Error(w, apierror.ClientBadRequest())
+		return
+	}
+
+	err := ph.db.QueryRow("SELECT COUNT(id), p.user_id FROM products p WHERE id = $1 GROUP BY p.user_id", productId).Scan(&count, &id)
+	if err != nil {
+		response.Error(w, apierror.CustomServerError(err.Error()))
+		return
+	}
+
+	if count == 0 {
+		response.Error(w, apierror.ClientNotFound("product"))
+		return
+	}
+
+	if id != userId {
+		response.Error(w, apierror.ClientForbidden())
+		return
+	}
+
+	_, err = ph.db.Exec(
+		`UPDATE products SET name = $1, price = $2, image_url = $3, stock = $4, condition = $5, tags = $6, is_purchasable = $7 WHERE id = $8`,
+		data.Name, data.Price, data.ImageUrl, data.Stock, data.Condition, pq.Array(data.Tags), data.IsPurchasable, productId,
+	)
+	if err != nil {
+		response.Error(w, apierror.CustomServerError("failed to update product"))
+		return
+	}
+
+	data.ID = productId
+
+	response.Success(w, apisuccess.CustomResponse(
+		http.StatusOK,
+		"product updated successfully",
 		data,
 	))
 }
