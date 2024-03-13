@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"mime/multipart"
+	"reflect"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -15,6 +16,10 @@ func RegisterCustomValidation(v *validator.Validate) error {
 
 	if err := v.RegisterValidation("imageMaxSize", imageMaxSizeValidator); err != nil {
 		return fmt.Errorf("failed to register image max size validation: %s", err)
+	}
+
+	if err := v.RegisterValidation("isBool", validateIsBool); err != nil {
+		return fmt.Errorf("failed to register is boolean validation: %s", err)
 	}
 
 	return nil
@@ -57,4 +62,8 @@ func imageMaxSizeValidator(fl validator.FieldLevel) bool {
 	}
 	maxSize := int64(2 * 1024 * 1024) // 2MB
 	return file.Size <= maxSize
+}
+
+func validateIsBool(fl validator.FieldLevel) bool {
+	return fl.Field().Kind() == reflect.Bool
 }
