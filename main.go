@@ -14,6 +14,7 @@ import (
 	"github.com/Croazt/shopifyx/db/migrations"
 	"github.com/Croazt/shopifyx/routes"
 	"github.com/fasthttp/router"
+	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/valyala/fasthttp"
 )
@@ -24,6 +25,7 @@ func main() {
 	var (
 		err            error
 		migrateCommand string
+		validate       *validator.Validate
 	)
 
 	flag.StringVar(&migrateCommand, "migrate", "up", "migration")
@@ -46,6 +48,7 @@ func main() {
 		}
 	}
 
+	validate = validator.New()
 	r := router.New()
 
 	s := &fasthttp.Server{
@@ -56,10 +59,11 @@ func main() {
 		IdleTimeout:      10 * time.Second,
 	}
 
-	routes.AuthRoute(r, db)
+	routes.AuthRoute(r, db, validate)
 	routes.ImageRoute(r)
 
 	go func() {
+		fmt.Println("Listen and Serve at port 8000")
 		if err := s.ListenAndServe(":8000"); err != nil {
 			log.Fatalf("error in ListenAndServe: %s", err)
 		}

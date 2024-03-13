@@ -5,14 +5,16 @@ import (
 
 	"github.com/Croazt/shopifyx/handler"
 	"github.com/fasthttp/router"
+	"github.com/go-playground/validator/v10"
 )
 
-func AuthRoute(r *router.Router, db *sql.DB) {
-	authHandler := handler.NewAuthHandler(db)
-	r.POST("/register", authHandler.Register)
-	r.POST("/login", authHandler.Login)
+func AuthRoute(r *router.Router, db *sql.DB, validator *validator.Validate) {
+	authHandler := handler.NewAuthHandler(db, validator)
+	r.POST("/v1/user/register", authHandler.Register)
+	r.POST("/v1/user/login", authHandler.Login)
 }
+
 func ImageRoute(r *router.Router) {
 	imageHandler := handler.NewImageHandler()
-	r.POST("/image", imageHandler.Store)
+	r.POST("/v1/image", imageHandler.Store)
 }

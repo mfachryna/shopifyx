@@ -8,14 +8,16 @@ type User struct {
 }
 
 type UserRegister struct {
-	Name     string `json:"name"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Name     string `json:"name" validate:"required,min=5,max=50"`
+	Username string `json:"username" validate:"required,min=5,max=15"`
+	Password string `json:"password" validate:"required,min=5,max=15"`
 }
+
 type UserLogin struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
+
 type UserAuthResponse struct {
 	Name        string `json:"name"`
 	Username    string `json:"username"`

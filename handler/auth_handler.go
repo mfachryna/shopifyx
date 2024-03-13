@@ -3,6 +3,7 @@ package handler
 import (
 	"database/sql"
 	"encoding/json"
+	"net/http"
 	"time"
 
 	"github.com/Croazt/shopifyx/domain"
@@ -10,19 +11,23 @@ import (
 	"github.com/Croazt/shopifyx/utils/response"
 	apierror "github.com/Croazt/shopifyx/utils/response/error"
 	apisuccess "github.com/Croazt/shopifyx/utils/response/success"
+	"github.com/Croazt/shopifyx/utils/validation"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/valyala/fasthttp"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
-	db *sql.DB
+	db        *sql.DB
+	validator *validator.Validate
 }
 
 // NewUserHandler creates a new instance of UserHandler
-func NewAuthHandler(db *sql.DB) *AuthHandler {
+func NewAuthHandler(db *sql.DB, validator *validator.Validate) *AuthHandler {
 	return &AuthHandler{
-		db: db,
+		db:        db,
+		validator: validator,
 	}
 }
 
@@ -33,6 +38,14 @@ func (uh *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 
 		response.Error(ctx, apierror.ClientBadRequest())
 		return
+	}
+
+	if err := uh.validator.Struct(registerData); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		for _, e := range validationErrors {
+			response.Error(ctx, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
+			return
+		}
 	}
 
 	var count int
@@ -82,8 +95,6 @@ func (uh *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 	}
 
 	response.Success(ctx, apisuccess.RegisterResponse(res))
-	return
-
 }
 
 // Register registers a new user
@@ -121,6 +132,4 @@ func (uh *AuthHandler) Login(ctx *fasthttp.RequestCtx) {
 	}
 
 	response.Success(ctx, apisuccess.LoginResponse(res))
-	return
-
 }

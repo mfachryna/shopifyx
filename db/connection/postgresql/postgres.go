@@ -3,7 +3,6 @@ package postgresql
 import (
 	"database/sql"
 	"fmt"
-
 )
 
 func prepareStatement(db *sql.DB, storeName, queryName, sql string) (*sql.Stmt, error) {
