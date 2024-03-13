@@ -37,7 +37,7 @@ func JwtMiddleware(next http.Handler) http.Handler {
 					return
 				}
 			}
-			response.Error(w, apierror.CustomServerError("invalid token"))
+			response.Error(w, apierror.ClientInvalidToken())
 			return
 		}
 
