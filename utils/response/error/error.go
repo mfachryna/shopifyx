@@ -16,7 +16,7 @@ func CustomError(status int, message string) Error {
 func ClientBadRequest() Error {
 	return Error{
 		HttpStatus: http.StatusBadRequest,
-		Message:    "failed to parse request",
+		Message:    "required fields are missing or invalid",
 	}
 }
 
