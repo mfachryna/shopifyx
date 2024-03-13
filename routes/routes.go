@@ -35,3 +35,13 @@ func ProductRoute(r chi.Router, db *sql.DB, validator *validator.Validate) {
 		r.Delete("/{productId}", productHandler.Delete)
 	})
 }
+func BankAccountRoute(r chi.Router, db *sql.DB, validator *validator.Validate) {
+	bankAccountHandler := handler.NewBankAccountHandler(db, validator)
+	r.Route("/bank/account", func(r chi.Router) {
+		r.Use(middleware.JwtMiddleware)
+		r.Get("/", bankAccountHandler.Index)
+		r.Post("/", bankAccountHandler.Create)
+		r.Patch("/{bankAccountId}", bankAccountHandler.Update)
+		r.Delete("/{bankAccountId}", bankAccountHandler.Delete)
+	})
+}

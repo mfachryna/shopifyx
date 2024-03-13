@@ -60,6 +60,7 @@ func main() {
 		routes.AuthRoute(r, db, validate)
 		routes.ImageRoute(r, validate)
 		routes.ProductRoute(r, db, validate)
+		routes.BankAccountRoute(r, db, validate)
 
 	})
 	s := &http.Server{
