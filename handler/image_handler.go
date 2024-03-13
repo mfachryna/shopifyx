@@ -109,7 +109,7 @@ func generateRandomString(length int) string {
 func validateImageFileType(fileHeader *multipart.FileHeader) error {
 	ext := strings.ToLower(fileHeader.Filename[strings.LastIndex(fileHeader.Filename, ".")+1:])
 	if !(ext == "jpg" || ext == "jpeg") {
-		return fmt.Errorf("File format must be JPG or JPEG")
+		return fmt.Errorf("file format must be JPG or JPEG")
 	}
 	return nil
 }
