@@ -13,6 +13,7 @@ import (
 	"github.com/Croazt/shopifyx/db/connection"
 	"github.com/Croazt/shopifyx/db/migrations"
 	"github.com/Croazt/shopifyx/routes"
+	"github.com/Croazt/shopifyx/utils/validation"
 	"github.com/fasthttp/router"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
@@ -49,6 +50,10 @@ func main() {
 	}
 
 	validate = validator.New()
+	if err := validation.RegisterCustomValidation(validate); err != nil {
+		log.Fatalf("error register custom validation")
+	}
+
 	r := router.New()
 
 	s := &fasthttp.Server{
@@ -60,7 +65,7 @@ func main() {
 	}
 
 	routes.AuthRoute(r, db, validate)
-	routes.ImageRoute(r)
+	routes.ImageRoute(r, validate)
 
 	go func() {
 		fmt.Println("Listen and Serve at port 8000")
