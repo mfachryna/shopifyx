@@ -19,10 +19,19 @@ func RegisterResponse(user *domain.UserAuthResponse) Success {
 		Data:       user,
 	}
 }
+
 func LoginResponse(user *domain.UserAuthResponse) Success {
 	return Success{
 		HttpStatus: http.StatusOK,
 		Message:    "User logged successfully",
 		Data:       user,
+	}
+}
+
+func CustomResponse(status int, message string, data interface{}) Success {
+	return Success{
+		HttpStatus: status,
+		Message:    message,
+		Data:       data,
 	}
 }
