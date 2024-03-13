@@ -51,7 +51,7 @@ func ClientAccessExpired() Error {
 func ClientForbidden() Error {
 	return Error{
 		HttpStatus: http.StatusForbidden,
-		Message:    "we already sent email, please wait for a minute",
+		Message:    "you are not the seller",
 	}
 }
 
