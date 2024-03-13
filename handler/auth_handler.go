@@ -105,6 +105,14 @@ func (uh *AuthHandler) Login(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
+	if err := uh.validator.Struct(loginData); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		for _, e := range validationErrors {
+			response.Error(ctx, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
+			return
+		}
+	}
+
 	var user domain.User
 	err := uh.db.QueryRow("SELECT id,username,name,password FROM users WHERE username = $1 LIMIT 1;", loginData.Username).Scan(&user.ID, &user.Username, &user.Name, &user.Password)
 
