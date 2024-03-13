@@ -35,7 +35,6 @@ func NewAuthHandler(db *sql.DB, validator *validator.Validate) *AuthHandler {
 func (uh *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 	var registerData domain.UserRegister
 	if err := json.Unmarshal(ctx.PostBody(), &registerData); err != nil {
-
 		response.Error(ctx, apierror.ClientBadRequest())
 		return
 	}
