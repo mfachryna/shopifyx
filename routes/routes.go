@@ -14,7 +14,7 @@ func AuthRoute(r *router.Router, db *sql.DB, validator *validator.Validate) {
 	r.POST("/v1/user/login", authHandler.Login)
 }
 
-func ImageRoute(r *router.Router) {
-	imageHandler := handler.NewImageHandler()
+func ImageRoute(r *router.Router, validator *validator.Validate) {
+	imageHandler := handler.NewImageHandler(validator)
 	r.POST("/v1/image", imageHandler.Store)
 }

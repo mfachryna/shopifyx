@@ -8,38 +8,54 @@ import (
 
 	"github.com/Croazt/shopifyx/utils/response"
 	apierror "github.com/Croazt/shopifyx/utils/response/error"
+	"github.com/Croazt/shopifyx/utils/validation"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/go-playground/validator/v10"
 	"github.com/valyala/fasthttp"
 )
 
 type ImageHandler struct {
+	v *validator.Validate
 }
 
-func NewImageHandler() *ImageHandler {
-	return &ImageHandler{}
+func NewImageHandler(v *validator.Validate) *ImageHandler {
+	return &ImageHandler{
+		v: v,
+	}
 }
 
-func (uh *ImageHandler) Store(ctx *fasthttp.RequestCtx) {
+func (im *ImageHandler) Store(ctx *fasthttp.RequestCtx) {
 	fileHeader, err := ctx.FormFile("file")
 	if err != nil {
 		ctx.Error("Failed to read file from form", http.StatusBadRequest)
 		return
 	}
+
+	if err := validation.ValidateFile(im.v, fileHeader); err != nil {
+		response.Error(ctx, apierror.CustomError(http.StatusBadRequest, err.Error()))
+		return
+	}
+
 	file, err := fileHeader.Open()
+	if err != nil {
+		response.Error(ctx, apierror.CustomServerError("failed to open file"))
+	}
 	defer file.Close()
+
 	imageData := bytes.Buffer{}
 	_, err = imageData.ReadFrom(file)
 	if err != nil {
-		response.Error(ctx, apierror.CustomServerError("Failed to generate access token"))
+		response.Error(ctx, apierror.CustomServerError("failed to generate access token"))
 		return
 	}
+
 	imageUrl, err := UploadImageToS3(fileHeader.Filename, imageData.Bytes())
 	if err != nil {
 		log.Printf("Failed to upload image to S3: %v", err)
-		response.Error(ctx, apierror.CustomServerError("Failed to upload image"))
+		response.Error(ctx, apierror.CustomServerError("failed to upload image"))
 		return
 	}
 
@@ -54,6 +70,7 @@ func UploadImageToS3(objectKey string, imageData []byte) (string, error) {
 	bucketName := os.Getenv("S3_BUCKET_NAME")
 	s3Id := os.Getenv("S3_ID")
 	s3SecretKey := os.Getenv("S3_SECRET_KEY")
+
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("ap-southeast-1"),
 		Credentials: credentials.NewStaticCredentials(
@@ -74,7 +91,6 @@ func UploadImageToS3(objectKey string, imageData []byte) (string, error) {
 		Key:    aws.String(objectKey),
 		Body:   bytes.NewReader(imageData),
 	})
-
 	if err != nil {
 		return "", err
 	}
