@@ -14,7 +14,6 @@ import (
 	"github.com/Croazt/shopifyx/utils/validation"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/valyala/fasthttp"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -32,17 +31,18 @@ func NewAuthHandler(db *sql.DB, validator *validator.Validate) *AuthHandler {
 }
 
 // Register registers a new user
-func (uh *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
+func (uh *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var registerData domain.UserRegister
-	if err := json.Unmarshal(ctx.PostBody(), &registerData); err != nil {
-		response.Error(ctx, apierror.ClientBadRequest())
+	if err := json.NewDecoder(r.Body).Decode(&registerData); err != nil {
+
+		response.Error(w, apierror.ClientBadRequest())
 		return
 	}
 
 	if err := uh.validator.Struct(registerData); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
 		for _, e := range validationErrors {
-			response.Error(ctx, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
+			response.Error(w, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
 			return
 		}
 	}
@@ -51,12 +51,12 @@ func (uh *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 	err := uh.db.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", registerData.Username).Scan(&count)
 
 	if err != nil {
-		response.Error(ctx, apierror.CustomServerError(err.Error()))
+		response.Error(w, apierror.CustomServerError(err.Error()))
 		return
 	}
 
 	if count > 0 {
-		response.Error(ctx, apierror.ClientAlreadyExists())
+		response.Error(w, apierror.ClientAlreadyExists())
 		return
 	}
 
@@ -66,7 +66,7 @@ func (uh *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 	go func() {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerData.Password), bcrypt.DefaultCost)
 		if err != nil {
-			response.Error(ctx, apierror.CustomServerError(err.Error()))
+			response.Error(w, apierror.CustomServerError(err.Error()))
 			return
 		}
 		hashedPasswordChan <- string(hashedPassword)
@@ -75,7 +75,7 @@ func (uh *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 	var id string
 	uuid := uuid.New()
 	if err := uh.db.QueryRow(`INSERT INTO users (id,username,name,password,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, uuid, registerData.Username, registerData.Name, <-hashedPasswordChan, date, date).Scan(&id); err != nil {
-		response.Error(ctx, apierror.CustomServerError(err.Error()))
+		response.Error(w, apierror.CustomServerError(err.Error()))
 		return
 	}
 
@@ -83,7 +83,7 @@ func (uh *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 		UserId: id,
 	})
 	if err != nil {
-		response.Error(ctx, apierror.CustomServerError("Failed to generate access token"))
+		response.Error(w, apierror.CustomServerError("Failed to generate access token"))
 		return
 	}
 
@@ -93,21 +93,21 @@ func (uh *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 		AccessToken: tokenString,
 	}
 
-	response.Success(ctx, apisuccess.RegisterResponse(res))
+	response.Success(w, apisuccess.RegisterResponse(res))
 }
 
 // Register registers a new user
-func (uh *AuthHandler) Login(ctx *fasthttp.RequestCtx) {
+func (uh *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var loginData domain.UserLogin
-	if err := json.Unmarshal(ctx.PostBody(), &loginData); err != nil {
-		response.Error(ctx, apierror.ClientBadRequest())
+	if err := json.NewDecoder(r.Body).Decode(&loginData); err != nil {
+		response.Error(w, apierror.ClientBadRequest())
 		return
 	}
 
 	if err := uh.validator.Struct(loginData); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
 		for _, e := range validationErrors {
-			response.Error(ctx, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
+			response.Error(w, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
 			return
 		}
 	}
@@ -116,19 +116,19 @@ func (uh *AuthHandler) Login(ctx *fasthttp.RequestCtx) {
 	err := uh.db.QueryRow("SELECT id,username,name,password FROM users WHERE username = $1 LIMIT 1;", loginData.Username).Scan(&user.ID, &user.Username, &user.Name, &user.Password)
 
 	if err != nil {
-		response.Error(ctx, apierror.ClientNotFound("Username"))
+		response.Error(w, apierror.ClientNotFound("Username"))
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginData.Password)); err != nil {
-		response.Error(ctx, apierror.CustomError(400, "Password missmatched"))
+		response.Error(w, apierror.CustomError(400, "Password missmatched"))
 	}
 
 	tokenString, err := jwt.SignedToken(jwt.Claim{
 		UserId: user.ID,
 	})
 	if err != nil {
-		response.Error(ctx, apierror.CustomServerError("Failed to generate access token"))
+		response.Error(w, apierror.CustomServerError("Failed to generate access token"))
 		return
 	}
 
@@ -138,5 +138,5 @@ func (uh *AuthHandler) Login(ctx *fasthttp.RequestCtx) {
 		AccessToken: tokenString,
 	}
 
-	response.Success(ctx, apisuccess.LoginResponse(res))
+	response.Success(w, apisuccess.LoginResponse(res))
 }

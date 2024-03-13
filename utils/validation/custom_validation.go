@@ -37,6 +37,8 @@ func CustomError(e validator.FieldError) string {
 }
 
 func ValidateFile(v *validator.Validate, fileHeader *multipart.FileHeader) error {
+
+	// fmt.Println(fileHeader)
 	if err := v.Var(fileHeader, "fileformat"); err != nil {
 		return fmt.Errorf("file format must be JPG or JPEG")
 	}
@@ -51,7 +53,9 @@ func fileFormatValidator(fl validator.FieldLevel) bool {
 	if !ok {
 		return false
 	}
+
 	ext := strings.ToLower(file.Filename[strings.LastIndex(file.Filename, ".")+1:])
+	fmt.Println(ext)
 	return ext == "jpg" || ext == "jpeg"
 }
 
@@ -60,7 +64,8 @@ func imageMaxSizeValidator(fl validator.FieldLevel) bool {
 	if !ok {
 		return false
 	}
-	maxSize := int64(2 * 1024 * 1024) // 2MB
+	maxSize := int64(2) // 2MB
+	fmt.Println(file.Size, maxSize)
 	return file.Size <= maxSize
 }
 

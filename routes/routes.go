@@ -5,22 +5,30 @@ import (
 
 	"github.com/Croazt/shopifyx/handler"
 	"github.com/Croazt/shopifyx/middleware"
-	"github.com/fasthttp/router"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 )
 
-func AuthRoute(r *router.Router, db *sql.DB, validator *validator.Validate) {
+func AuthRoute(r chi.Router, db *sql.DB, validator *validator.Validate) {
 	authHandler := handler.NewAuthHandler(db, validator)
-	r.POST("/v1/user/register", authHandler.Register)
-	r.POST("/v1/user/login", authHandler.Login)
+	r.Route("/user", func(r chi.Router) {
+		r.Post("/register", authHandler.Register)
+		r.Post("/login", authHandler.Login)
+	})
 }
 
-func ImageRoute(r *router.Router, validator *validator.Validate) {
+func ImageRoute(r chi.Router, validator *validator.Validate) {
 	imageHandler := handler.NewImageHandler(validator)
-	r.POST("/v1/image", imageHandler.Store)
+	r.Route("/image", func(r chi.Router) {
+		r.Use(middleware.JwtMiddleware)
+		r.Post("/", imageHandler.Store)
+	})
 }
 
-func ProductRoute(r *router.Router, db *sql.DB, validator *validator.Validate) {
+func ProductRoute(r chi.Router, db *sql.DB, validator *validator.Validate) {
 	productHandler := handler.NewProductHandler(db, validator)
-	r.POST("/v1/product", middleware.JwtMiddleware(productHandler.Create))
+	r.Route("/product", func(r chi.Router) {
+		r.Use(middleware.JwtMiddleware)
+		r.Post("/", productHandler.Create)
+	})
 }

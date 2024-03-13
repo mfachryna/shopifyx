@@ -1,32 +1,32 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/Croazt/shopifyx/db/connection"
 	"github.com/Croazt/shopifyx/db/migrations"
 	"github.com/Croazt/shopifyx/routes"
 	"github.com/Croazt/shopifyx/utils/validation"
-	"github.com/fasthttp/router"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
-	"github.com/valyala/fasthttp"
 )
 
 var db *sql.DB
 
 func main() {
 	var (
-		err error
+		err            error
 		migrateCommand string
-		validate *validator.Validate
+		validate       *validator.Validate
 	)
 
 	flag.StringVar(&migrateCommand, "migrate", "up", "migration")
@@ -54,33 +54,36 @@ func main() {
 		log.Fatalf("error register custom validation")
 	}
 
-	r := router.New()
+	r := chi.NewRouter()
 
-	s := &fasthttp.Server{
-		Handler:          r.Handler,
-		DisableKeepalive: true,
-		ReadTimeout:      5 * time.Second,
-		WriteTimeout:     5 * time.Second,
-		IdleTimeout:      10 * time.Second,
+	r.Route("/v1", func(r chi.Router) {
+		routes.AuthRoute(r, db, validate)
+		routes.ImageRoute(r, validate)
+		routes.ProductRoute(r, db, validate)
+
+	})
+	s := &http.Server{
+		Addr:    ":8000",
+		Handler: r,
 	}
-
-	routes.AuthRoute(r, db, validate)
-	routes.ImageRoute(r, validate)
-	routes.ProductRoute(r, db, validate)
 
 	go func() {
 		fmt.Println("Listen and Serve at port 8000")
-		if err := s.ListenAndServe(":8000"); err != nil {
+		if err := s.ListenAndServe(); err != nil {
 			log.Fatalf("error in ListenAndServe: %s", err)
 		}
 	}()
+	log.Print("Server Started")
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-	<-sig
+	stopped := make(chan os.Signal, 1)
+	signal.Notify(stopped, os.Interrupt)
+	<-stopped
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	fmt.Println("shutting down gracefully...")
-	if err := s.Shutdown(); err != nil {
+	if err := s.Shutdown(ctx); err != nil {
 		log.Fatalf("error in Server Shutdown: %s", err)
 	}
 	fmt.Println("server stopped")

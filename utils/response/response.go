@@ -2,25 +2,25 @@ package response
 
 import (
 	"encoding/json"
+	"net/http"
 
 	apierror "github.com/Croazt/shopifyx/utils/response/error"
 	apisuccess "github.com/Croazt/shopifyx/utils/response/success"
-	"github.com/valyala/fasthttp"
 )
 
-func GenerateResponse(ctx *fasthttp.RequestCtx, status int, data interface{}) {
-	ctx.SetContentType("application/json")
-	ctx.SetStatusCode(status)
+func GenerateResponse(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 	if data == nil {
 		return
 	}
-	json.NewEncoder(ctx).Encode(data)
+	json.NewEncoder(w).Encode(data)
 }
 
-func Error(ctx *fasthttp.RequestCtx, e apierror.Error) {
-	GenerateResponse(ctx, e.HttpStatus, e)
+func Error(w http.ResponseWriter, e apierror.Error) {
+	GenerateResponse(w, e.HttpStatus, e)
 }
 
-func Success(ctx *fasthttp.RequestCtx, e apisuccess.Success) {
-	GenerateResponse(ctx, e.HttpStatus, e)
+func Success(w http.ResponseWriter, e apisuccess.Success) {
+	GenerateResponse(w, e.HttpStatus, e)
 }

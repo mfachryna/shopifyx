@@ -1,20 +1,22 @@
 package handler
 
 import (
-	"bytes"
-	"log"
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/Croazt/shopifyx/utils/response"
 	apierror "github.com/Croazt/shopifyx/utils/response/error"
-	"github.com/Croazt/shopifyx/utils/validation"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/go-playground/validator/v10"
-	"github.com/valyala/fasthttp"
 )
 
 type ImageHandler struct {
@@ -27,47 +29,42 @@ func NewImageHandler(v *validator.Validate) *ImageHandler {
 	}
 }
 
-func (im *ImageHandler) Store(ctx *fasthttp.RequestCtx) {
-	fileHeader, err := ctx.FormFile("file")
+func (im *ImageHandler) Store(w http.ResponseWriter, r *http.Request) {
+	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
-		ctx.Error("Failed to read file from form", http.StatusBadRequest)
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
 		return
-	}
-
-	if err := validation.ValidateFile(im.v, fileHeader); err != nil {
-		response.Error(ctx, apierror.CustomError(http.StatusBadRequest, err.Error()))
-		return
-	}
-
-	file, err := fileHeader.Open()
-	if err != nil {
-		response.Error(ctx, apierror.CustomServerError("failed to open file"))
 	}
 	defer file.Close()
 
-	imageData := bytes.Buffer{}
-	_, err = imageData.ReadFrom(file)
-	if err != nil {
-		response.Error(ctx, apierror.CustomServerError("failed to generate access token"))
+	// Validate file MIME type
+	if err := validateImageFileType(fileHeader); err != nil {
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
+		return
+	}
+	// Validate file size
+	if fileHeader.Size > (2 * 1024 * 1024) { // 2 MB
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, "File size exceeds the limit (2MB)"))
 		return
 	}
 
-	imageUrl, err := UploadImageToS3(fileHeader.Filename, imageData.Bytes())
+	imageUrl, err := UploadImageToS3(fileHeader.Filename, file)
 	if err != nil {
-		log.Printf("Failed to upload image to S3: %v", err)
-		response.Error(ctx, apierror.CustomServerError("failed to upload image"))
+		fmt.Printf("Failed to upload image to S3: %v", err)
+		response.Error(w, apierror.CustomServerError("failed to upload image, server error"))
 		return
 	}
 
-	response.GenerateResponse(ctx, 200, struct {
+	response.GenerateResponse(w, 200, struct {
 		ImageUrl string `json:"imageUrl"`
 	}{
 		ImageUrl: imageUrl,
 	})
 }
 
-func UploadImageToS3(objectKey string, imageData []byte) (string, error) {
-	bucketName := os.Getenv("S3_BUCKET_NAME")
+func UploadImageToS3(fileName string, image multipart.File) (string, error) {
+
+	bucketName := os.Getenv("S3_BASE_URL")
 	s3Id := os.Getenv("S3_ID")
 	s3SecretKey := os.Getenv("S3_SECRET_KEY")
 
@@ -79,24 +76,40 @@ func UploadImageToS3(objectKey string, imageData []byte) (string, error) {
 			"",
 		),
 	})
+
+	fileName = generateRandomString(10) + time.Now().Format("20060102150405") + "-" + fileName
 	if err != nil {
 		return "", err
 	}
 
 	svc := s3.New(sess)
 
-	// Upload image to S3
 	_, err = svc.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
-		Key:    aws.String(objectKey),
-		Body:   bytes.NewReader(imageData),
+		Key:    aws.String(fileName),
+		Body:   image,
 	})
+
 	if err != nil {
 		return "", err
 	}
 
-	// Generate public URL for the uploaded image
-	imageURL := "https://" + bucketName + ".s3.amazonaws.com/" + objectKey
-
+	imageURL := fmt.Sprintf("https://%s.s3-%s.amazonaws.com/%s", bucketName, "ap-southeast-1", fileName)
 	return imageURL, nil
+}
+
+func generateRandomString(length int) string {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(bytes)
+}
+
+func validateImageFileType(fileHeader *multipart.FileHeader) error {
+	ext := strings.ToLower(fileHeader.Filename[strings.LastIndex(fileHeader.Filename, ".")+1:])
+	if !(ext == "jpg" || ext == "jpeg") {
+		return fmt.Errorf("File format must be JPG or JPEG")
+	}
+	return nil
 }
