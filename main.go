@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Croazt/shopifyx/db/connection"
+	"github.com/Croazt/shopifyx/db/migrations"
 	"github.com/Croazt/shopifyx/routes"
 	"github.com/Croazt/shopifyx/utils/validation"
 	"github.com/fasthttp/router"
@@ -23,12 +25,12 @@ var db *sql.DB
 func main() {
 	var (
 		err error
-		// migrateCommand string
+		migrateCommand string
 		validate *validator.Validate
 	)
 
-	// flag.StringVar(&migrateCommand, "migrate", "up", "migration")
-	// flag.Parse()
+	flag.StringVar(&migrateCommand, "migrate", "up", "migration")
+	flag.Parse()
 
 	if godotenv.Load() != nil {
 		log.Fatal("error loading .env file")
@@ -40,12 +42,12 @@ func main() {
 	}
 	defer db.Close()
 
-	// if migrateCommand != "" {
-	// 	err = migrations.Migrate(db, migrateCommand)
-	// 	if err != nil {
-	// 		log.Fatalf("error migrating to schema: %v", err)
-	// 	}
-	// }
+	if migrateCommand != "" {
+		err = migrations.Migrate(db, migrateCommand)
+		if err != nil {
+			log.Fatalf("error migrating to schema: %v", err)
+		}
+	}
 
 	validate = validator.New()
 	if err := validation.RegisterCustomValidation(validate); err != nil {
