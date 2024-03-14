@@ -88,6 +88,7 @@ func UploadImageToS3(fileName string, image multipart.File) (string, error) {
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(fileName),
 		Body:   image,
+		ACL:    aws.String("public-read"),
 	})
 
 	if err != nil {
