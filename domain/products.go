@@ -35,3 +35,7 @@ type ProductFilter struct {
 	OrderBy        string   `json:"orderBy" validate:"omitempty,eq=asc|eq=desc" schema:"orderBy"`
 	Search         string   `json:"search" validate:"omitempty,min=3" schema:"search"`
 }
+type ProductDetail struct {
+	Product ProductData    `json:"product"`
+	Seller  UserSellerData `json:"seller"`
+}

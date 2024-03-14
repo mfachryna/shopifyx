@@ -23,3 +23,9 @@ type UserAuthResponse struct {
 	Username    string `json:"username"`
 	AccessToken string `json:"accessToken"`
 }
+
+type UserSellerData struct {
+	Name             string        `json:"name"`
+	ProductSoldTotal string        `json:"productSoldTotal"`
+	BankAccounts     []BankAccount `json:"bankAccounts"`
+}

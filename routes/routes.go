@@ -36,6 +36,7 @@ func ProductRoute(r chi.Router, db *sql.DB, validator *validator.Validate) {
 			r.Patch("/", productHandler.Update)
 			r.Delete("/", productHandler.Delete)
 			r.Get("/stock", productHandler.Stock)
+			r.Get("/", productHandler.Show)
 
 			paymentHandler := handler.NewPaymentHandler(db, validator)
 			r.Post("/buy", paymentHandler.Create)

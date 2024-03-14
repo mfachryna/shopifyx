@@ -32,7 +32,6 @@ func NewProductHandler(db *sql.DB, validate *validator.Validate) *ProductHandler
 }
 
 func (ph *ProductHandler) Index(w http.ResponseWriter, r *http.Request) {
-
 	if err := r.ParseForm(); err != nil {
 		response.Error(w, apierror.ServerError())
 		return
@@ -86,6 +85,62 @@ func (ph *ProductHandler) Index(w http.ResponseWriter, r *http.Request) {
 			Offset: *filter.Offset,
 			Total:  count,
 		},
+	))
+}
+
+func (ph *ProductHandler) Show(w http.ResponseWriter, r *http.Request) {
+	var (
+		productData domain.ProductDetail
+		sellerId    string
+	)
+
+	productId := chi.URLParam(r, "productId")
+	if productId == "" {
+		response.Error(w, apierror.ClientBadRequest())
+		return
+	}
+
+	if err := ph.db.QueryRow(
+		"SELECT id, name, price, image_url, stock, condition, tags, is_purchasable, purchase_count, user_id  FROM products WHERE products.id = $1",
+		productId).
+		Scan(&productData.Product.ID, &productData.Product.Name, &productData.Product.Price, &productData.Product.ImageUrl, &productData.Product.Stock, &productData.Product.Condition, pq.Array(&productData.Product.Tags), &productData.Product.IsPurchasable, &productData.Product.PurchaseCount, &sellerId); err != nil {
+		if err == sql.ErrNoRows {
+			response.Error(w, apierror.ClientNotFound("product"))
+			return
+		}
+
+		response.Error(w, apierror.CustomServerError(err.Error()))
+		return
+	}
+
+	if err := ph.db.QueryRow("SELECT name, product_sold_total FROM users WHERE id = $1", sellerId).Scan(&productData.Seller.Name, &productData.Seller.ProductSoldTotal); err != nil {
+		response.Error(w, apierror.CustomServerError(err.Error()))
+		return
+	}
+
+	rows, err := ph.db.Query("SELECT id, bank_name, bank_account_name, bank_account_number FROM bank_accounts WHERE user_id = $1", sellerId)
+
+	if err != nil {
+		response.Error(w, apierror.CustomServerError(err.Error()))
+		return
+	}
+	defer rows.Close()
+
+	productData.Seller.BankAccounts = make([]domain.BankAccount, 0)
+	for rows.Next() {
+		var bankAccount domain.BankAccount
+		err := rows.Scan(&bankAccount.ID, &bankAccount.BankName, &bankAccount.BankAccountName, &bankAccount.BankAccountNumber)
+		if err != nil {
+			response.Error(w, apierror.CustomServerError("Error scanning row:"+err.Error()))
+			continue
+		}
+		productData.Seller.BankAccounts = append(productData.Seller.BankAccounts, bankAccount)
+	}
+
+	response.Success(w, apisuccess.CustomResponse(
+		http.StatusOK,
+		"ok",
+		productData,
 	))
 }
 
