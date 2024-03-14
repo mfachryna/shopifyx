@@ -31,9 +31,15 @@ func ProductRoute(r chi.Router, db *sql.DB, validator *validator.Validate) {
 		r.Use(middleware.JwtMiddleware)
 		r.Get("/", productHandler.Index)
 		r.Post("/", productHandler.Create)
-		r.Get("/{productId}/stock", productHandler.Stock)
-		r.Patch("/{productId}", productHandler.Update)
-		r.Delete("/{productId}", productHandler.Delete)
+
+		r.Route("/{productId}", func(r chi.Router) {
+			r.Patch("/", productHandler.Update)
+			r.Delete("/", productHandler.Delete)
+			r.Get("/stock", productHandler.Stock)
+
+			paymentHandler := handler.NewPaymentHandler(db, validator)
+			r.Post("/buy", paymentHandler.Create)
+		})
 	})
 }
 func BankAccountRoute(r chi.Router, db *sql.DB, validator *validator.Validate) {
