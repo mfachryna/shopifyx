@@ -166,7 +166,7 @@ func (ph *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	userId := r.Context().Value("user_id").(string)
 	if userId == "" {
-		response.Error(w, apierror.CustomServerError("userId not found in context"))
+		response.Error(w, apierror.CustomError(http.StatusForbidden, "userId not found in context"))
 		return
 	}
 	uuid := uuid.New()
