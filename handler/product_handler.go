@@ -51,7 +51,11 @@ func (ph *ProductHandler) Index(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	*filter.Offset = *filter.Limit * (*filter.Offset)
-	sql, sqlTotal := getFilteredSql(r, filter)
+	sql, sqlTotal, err := getFilteredSql(r, filter)
+	if err != nil {
+		response.Error(w, apierror.CustomError(http.StatusForbidden, err.Error()))
+		return
+	}
 
 	var count int64
 	if err := ph.db.QueryRow(sqlTotal).Scan(&count); err != nil {
@@ -337,7 +341,7 @@ func (ph *ProductHandler) Stock(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Stock{Stock: stock})
 }
 
-func getFilteredSql(r *http.Request, filter domain.ProductFilter) (string, string) {
+func getFilteredSql(r *http.Request, filter domain.ProductFilter) (string, string, error) {
 	sort := "id"
 	if !(filter.SortBy == "") {
 		sort = " ORDER BY " + filter.SortBy
@@ -349,7 +353,10 @@ func getFilteredSql(r *http.Request, filter domain.ProductFilter) (string, strin
 	}
 	where := ""
 	if filter.UserOnly {
-		userId := r.Context().Value("user_id").(string)
+		userId := r.Context().Value("user_id")
+		if userId == nil {
+			return "", "", fmt.Errorf("userOnly filter can be used if you logged in")
+		}
 		where = fmt.Sprintf("user_id = '%s'", userId)
 	}
 
@@ -391,5 +398,5 @@ func getFilteredSql(r *http.Request, filter domain.ProductFilter) (string, strin
 
 	sql := fmt.Sprintf("SELECT id,name,price,image_url,stock,condition,tags,is_purchasable,purchase_count FROM products WHERE %s ORDER BY %s %s LIMIT %d OFFSET %d", where, sort, order, *filter.Limit, *filter.Offset)
 	sqlTotal := fmt.Sprintf("SELECT count(id) FROM products WHERE %s", where)
-	return sql, sqlTotal
+	return sql, sqlTotal, nil
 }

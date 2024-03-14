@@ -28,18 +28,23 @@ func ImageRoute(r chi.Router, validator *validator.Validate) {
 func ProductRoute(r chi.Router, db *sql.DB, validator *validator.Validate) {
 	productHandler := handler.NewProductHandler(db, validator)
 	r.Route("/product", func(r chi.Router) {
-		r.Use(middleware.JwtMiddleware)
-		r.Get("/", productHandler.Index)
-		r.Post("/", productHandler.Create)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.JwtMiddleware)
+			r.Post("/", productHandler.Create)
 
-		r.Route("/{productId}", func(r chi.Router) {
-			r.Patch("/", productHandler.Update)
-			r.Delete("/", productHandler.Delete)
-			r.Get("/stock", productHandler.Stock)
-			r.Get("/", productHandler.Show)
+			r.Route("/{productId}", func(r chi.Router) {
+				r.Patch("/", productHandler.Update)
+				r.Delete("/", productHandler.Delete)
+				r.Get("/stock", productHandler.Stock)
 
-			paymentHandler := handler.NewPaymentHandler(db, validator)
-			r.Post("/buy", paymentHandler.Create)
+				paymentHandler := handler.NewPaymentHandler(db, validator)
+				r.Post("/buy", paymentHandler.Create)
+			})
+		})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.OptionalJwtMiddleware)
+			r.Get("/", productHandler.Index)
+			r.Get("/{productId}", productHandler.Show)
 		})
 	})
 }
