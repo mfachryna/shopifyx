@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS products (
     stock INTEGER  NOT NULL,
     condition VARCHAR(50)  NOT NULL,
     is_purchasable BOOLEAN  NOT NULL,
+    purchase_count INTEGER  DEFAULT 0,
     tags VARCHAR[],
     user_id UUID REFERENCES users(id)
 );

@@ -11,6 +11,10 @@ type Success struct {
 	Message    string      `json:"message"`
 	Data       interface{} `json:"data"`
 }
+type SuccessWithMeta struct {
+	Success
+	Meta domain.Meta `json:"meta"`
+}
 
 func RegisterResponse(user *domain.UserAuthResponse) Success {
 	return Success{
@@ -33,5 +37,16 @@ func CustomResponse(status int, message string, data interface{}) Success {
 		HttpStatus: status,
 		Message:    message,
 		Data:       data,
+	}
+}
+
+func IndexResponse(status int, message string, data interface{}, meta domain.Meta) SuccessWithMeta {
+	return SuccessWithMeta{
+		Success: Success{
+			HttpStatus: status,
+			Message:    message,
+			Data:       data,
+		},
+		Meta: meta,
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Croazt/shopifyx/domain"
 	"github.com/Croazt/shopifyx/utils/response"
@@ -14,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/gorilla/schema"
 	"github.com/lib/pq"
 )
 
@@ -27,6 +29,64 @@ func NewProductHandler(db *sql.DB, validate *validator.Validate) *ProductHandler
 		db:       db,
 		validate: validate,
 	}
+}
+
+func (ph *ProductHandler) Index(w http.ResponseWriter, r *http.Request) {
+
+	if err := r.ParseForm(); err != nil {
+		response.Error(w, apierror.ServerError())
+		return
+	}
+
+	var filter domain.ProductFilter
+	if err := schema.NewDecoder().Decode(&filter, r.Form); err != nil {
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	if err := ph.validate.Struct(filter); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		for _, e := range validationErrors {
+			response.Error(w, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
+			return
+		}
+	}
+	*filter.Offset = *filter.Limit * (*filter.Offset)
+	sql, sqlTotal := getFilteredSql(r, filter)
+
+	var count int64
+	if err := ph.db.QueryRow(sqlTotal).Scan(&count); err != nil {
+		response.Error(w, apierror.CustomServerError(err.Error()))
+		return
+	}
+	rows, err := ph.db.Query(sql)
+	if err != nil {
+		response.Error(w, apierror.CustomServerError(err.Error()))
+		return
+	}
+	defer rows.Close()
+
+	data := make([]domain.ProductData, 0)
+	for rows.Next() {
+		var product domain.ProductData
+		err := rows.Scan(&product.ID, &product.Name, &product.Price, &product.ImageUrl, &product.Stock, &product.Condition, pq.Array(&product.Tags), &product.IsPurchasable, &product.PurchaseCount)
+		if err != nil {
+			response.Error(w, apierror.CustomServerError("Error scanning row:"+err.Error()))
+			continue
+		}
+		data = append(data, product)
+	}
+
+	response.SuccessMeta(w, apisuccess.IndexResponse(
+		http.StatusOK,
+		"ok",
+		data,
+		domain.Meta{
+			Limit:  *filter.Limit,
+			Offset: *filter.Offset,
+			Total:  count,
+		},
+	))
 }
 
 func (ph *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -220,4 +280,61 @@ func (ph *ProductHandler) Stock(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(Stock{Stock: stock})
+}
+
+func getFilteredSql(r *http.Request, filter domain.ProductFilter) (string, string) {
+	sort := "id"
+	if !(filter.SortBy == "") {
+		sort = " ORDER BY " + filter.SortBy
+	}
+
+	order := "asc"
+	if !(filter.OrderBy == "") {
+		order = filter.OrderBy
+	}
+	where := ""
+	if filter.UserOnly {
+		userId := r.Context().Value("user_id").(string)
+		where = fmt.Sprintf("user_id = '%s'", userId)
+	}
+
+	if len(filter.Tags) > 0 {
+		jsonTag, err := json.Marshal([]string(filter.Tags))
+		if err == nil {
+			replacer := strings.NewReplacer("[", "{", "]", "}")
+			stringTag := replacer.Replace(string(jsonTag))
+			if where != "" {
+				where += fmt.Sprintf(" AND tags && '%s'", stringTag)
+			} else {
+				where = fmt.Sprintf("tags && '%s'", stringTag)
+			}
+		}
+	}
+
+	if filter.Condition != "" {
+		if where != "" {
+			where += fmt.Sprintf(" AND condition = '%s'", filter.Condition)
+		} else {
+			where = fmt.Sprintf("condition = '%s'", filter.Condition)
+		}
+	}
+
+	if *filter.MaxPrice > -1 || *filter.MinPrice > -1 {
+		if where != "" {
+			where += fmt.Sprintf(" AND price >= '%d' AND price <= '%d'", *filter.MinPrice, *filter.MaxPrice)
+		} else {
+			where = fmt.Sprintf("price >= '%d' AND price <= '%d'", *filter.MinPrice, *filter.MaxPrice)
+		}
+	}
+	if filter.Search != "" {
+		if where != "" {
+			where += " AND name LIKE '%" + filter.Search + "%'"
+		} else {
+			where = "name LIKE '%" + filter.Search + "%'"
+		}
+	}
+
+	sql := fmt.Sprintf("SELECT id,name,price,image_url,stock,condition,tags,is_purchasable,purchase_count FROM products WHERE %s ORDER BY %s %s LIMIT %d OFFSET %d", where, sort, order, *filter.Limit, *filter.Offset)
+	sqlTotal := fmt.Sprintf("SELECT count(id) FROM products WHERE %s", where)
+	return sql, sqlTotal
 }

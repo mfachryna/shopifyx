@@ -38,6 +38,7 @@ func (bah *BankAccountHandler) Index(w http.ResponseWriter, r *http.Request) {
 	rows, err := bah.db.Query(`SELECT id,bank_name,bank_account_name, bank_account_number FROM bank_accounts WHERE user_id = $1`, userId)
 	if err != nil {
 		response.Error(w, apierror.CustomServerError(err.Error()))
+		return
 	}
 	defer rows.Close()
 

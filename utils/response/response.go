@@ -24,3 +24,6 @@ func Error(w http.ResponseWriter, e apierror.Error) {
 func Success(w http.ResponseWriter, e apisuccess.Success) {
 	GenerateResponse(w, e.HttpStatus, e)
 }
+func SuccessMeta(w http.ResponseWriter, e apisuccess.SuccessWithMeta) {
+	GenerateResponse(w, e.HttpStatus, e)
+}
