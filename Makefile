@@ -11,7 +11,7 @@ build-alpine:
 
 .PHONY: mock-install
 mock-install:
-	@go install github.com/golang/mock/mockgen@1.6.0
+	@go install github.com/golang/mock/mockgen@v1.6.0
 
 # make startProm
 .PHONY: start-prom
