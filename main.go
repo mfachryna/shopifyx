@@ -13,11 +13,13 @@ import (
 
 	"github.com/Croazt/shopifyx/db/connection"
 	"github.com/Croazt/shopifyx/db/migrations"
+	"github.com/Croazt/shopifyx/middleware"
 	"github.com/Croazt/shopifyx/routes"
 	"github.com/Croazt/shopifyx/utils/validation"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var db *sql.DB
@@ -56,7 +58,9 @@ func main() {
 
 	r := chi.NewRouter()
 
+	r.Handle("/metrics", promhttp.Handler())
 	r.Route("/v1", func(r chi.Router) {
+		r.Use(middleware.PrometheusMiddleware)
 		routes.AuthRoute(r, db, validate)
 		routes.ImageRoute(r, validate)
 		routes.ProductRoute(r, db, validate)
