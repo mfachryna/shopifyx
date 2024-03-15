@@ -9,6 +9,10 @@ build-alpine:
 	@go mod tidy && \
 	GOOS=linux GOARCH=amd64 go build -o ./app ./
 
+.PHONY: mock-install
+mock-install:
+	@go install github.com/golang/mock/mockgen@1.6.0
+
 # make startProm
 .PHONY: start-prom
 start-prom:
