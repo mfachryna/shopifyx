@@ -16,7 +16,7 @@ mock-install:
 # make startProm
 .PHONY: start-prom
 start-prom:
-	docker run -d \
+	docker run \
 	--rm \
 	--network="host" \
 	-p 9090:9090 \

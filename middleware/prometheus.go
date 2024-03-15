@@ -12,10 +12,9 @@ func PrometheusMiddleware(next http.Handler) http.Handler {
 	registry := prometheus.NewRegistry()
 
 	histogram := promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Subsystem: "http",
-		Name:      "request_duration_seconds",
-		Help:      "Duration of HTTP requests in seconds.",
-		Buckets:   prometheus.LinearBuckets(1, 1, 10),
+		Name:    "shopifyx_requests",
+		Help:    "Duration of HTTP requests in seconds.",
+		Buckets: prometheus.LinearBuckets(1, 1, 10),
 	}, []string{"path", "method", "status"})
 
 	registry.MustRegister(histogram)
