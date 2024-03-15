@@ -11,7 +11,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/Croazt/shopifyx/db/connection"
+	"github.com/Croazt/shopifyx/db/connection/postgresql"
 	"github.com/Croazt/shopifyx/db/migrations"
 	"github.com/Croazt/shopifyx/middleware"
 	"github.com/Croazt/shopifyx/routes"
@@ -38,7 +38,7 @@ func main() {
 		log.Fatal("error loading .env file")
 	}
 
-	db, err = connection.OpenPg()
+	db, err = postgresql.OpenPg()
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}
