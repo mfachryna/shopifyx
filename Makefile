@@ -1,3 +1,14 @@
+# build app
+.PHONY: build
+build:
+	@go build -o ./app ./
+
+# build app alpine
+.PHONY: build-alpine
+build-alpine:
+	@go mod tidy && \
+	GOOS=linux GOARCH=amd64 go build -o ./app ./
+
 # make startProm
 .PHONY: startProm
 startProm:
