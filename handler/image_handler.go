@@ -32,6 +32,7 @@ func NewImageHandler(v *validator.Validate) *ImageHandler {
 func (im *ImageHandler) Store(w http.ResponseWriter, r *http.Request) {
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
 		return
 	}
@@ -39,11 +40,13 @@ func (im *ImageHandler) Store(w http.ResponseWriter, r *http.Request) {
 
 	// Validate file MIME type
 	if err := validateImageFileType(fileHeader); err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
 		return
 	}
 	// Validate file size
 	if fileHeader.Size > (2 * 1024 * 1024) { // 2 MB
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomError(http.StatusBadRequest, "File size exceeds the limit (2MB)"))
 		return
 	}
@@ -51,6 +54,7 @@ func (im *ImageHandler) Store(w http.ResponseWriter, r *http.Request) {
 	imageUrl, err := UploadImageToS3(fileHeader.Filename, file)
 	if err != nil {
 		fmt.Printf("Failed to upload image to S3: %v", err)
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError("failed to upload image, server error"))
 		return
 	}

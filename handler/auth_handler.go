@@ -3,6 +3,7 @@ package handler
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -35,6 +36,7 @@ func (uh *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var registerData domain.UserRegister
 	if err := json.NewDecoder(r.Body).Decode(&registerData); err != nil {
 
+		fmt.Println(err.Error())
 		response.Error(w, apierror.ClientBadRequest())
 		return
 	}
@@ -42,6 +44,7 @@ func (uh *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if err := uh.validator.Struct(registerData); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
 		for _, e := range validationErrors {
+			fmt.Println(err.Error())
 			response.Error(w, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
 			return
 		}
@@ -51,11 +54,13 @@ func (uh *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	err := uh.db.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", registerData.Username).Scan(&count)
 
 	if err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError(err.Error()))
 		return
 	}
 
 	if count > 0 {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.ClientAlreadyExists())
 		return
 	}
@@ -66,6 +71,7 @@ func (uh *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerData.Password), bcrypt.DefaultCost)
 		if err != nil {
+			fmt.Println(err.Error())
 			response.Error(w, apierror.CustomServerError(err.Error()))
 			return
 		}
@@ -75,6 +81,7 @@ func (uh *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var id string
 	uuid := uuid.New()
 	if err := uh.db.QueryRow(`INSERT INTO users (id,username,name,password,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, uuid, registerData.Username, registerData.Name, <-hashedPasswordChan, date, date).Scan(&id); err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError(err.Error()))
 		return
 	}
@@ -83,6 +90,7 @@ func (uh *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		UserId: id,
 	})
 	if err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError("Failed to generate access token"))
 		return
 	}
@@ -100,6 +108,7 @@ func (uh *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 func (uh *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var loginData domain.UserLogin
 	if err := json.NewDecoder(r.Body).Decode(&loginData); err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.ClientBadRequest())
 		return
 	}
@@ -107,6 +116,7 @@ func (uh *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err := uh.validator.Struct(loginData); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
 		for _, e := range validationErrors {
+			fmt.Println(err.Error())
 			response.Error(w, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
 			return
 		}
@@ -116,11 +126,13 @@ func (uh *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	err := uh.db.QueryRow("SELECT id,username,name,password FROM users WHERE username = $1 LIMIT 1;", loginData.Username).Scan(&user.ID, &user.Username, &user.Name, &user.Password)
 
 	if err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.ClientNotFound("Username"))
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginData.Password)); err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomError(400, "Password missmatched"))
 	}
 
@@ -128,6 +140,7 @@ func (uh *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		UserId: user.ID,
 	})
 	if err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError("Failed to generate access token"))
 		return
 	}
