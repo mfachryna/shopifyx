@@ -35,3 +35,8 @@ type responseWriter struct {
 	http.ResponseWriter
 	status int
 }
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.status = code
+	rw.ResponseWriter.WriteHeader(code)
+}
