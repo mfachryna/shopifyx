@@ -10,8 +10,8 @@ build-alpine:
 	GOOS=linux GOARCH=amd64 go build -o ./app ./
 
 # make startProm
-.PHONY: startProm
-startProm:
+.PHONY: start-prom
+start-prom:
 	docker run -d \
 	--rm \
 	--network="host" \
@@ -22,8 +22,8 @@ startProm:
 
 # make startGrafana
 # for first timers, the username & password is both `admin`
-.PHONY: startGrafana
-startGrafana:
+.PHONY: start-grafana
+start-grafana:
 	docker volume create grafana-storage
 	docker volume inspect grafana-storage
 	docker run -p 3000:3000 --name=grafana grafana/grafana-oss || docker start grafana
