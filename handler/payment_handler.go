@@ -46,6 +46,12 @@ func (ph *PaymentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if err := validation.UrlValidation(data.PaymentProofImageUrl); err != nil {
+		fmt.Println(err.Error())
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
+		return
+	}
+
 	userId := r.Context().Value("user_id").(string)
 	if userId == "" {
 		fmt.Println("userId not found in context")
