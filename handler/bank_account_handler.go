@@ -136,6 +136,12 @@ func (bah *BankAccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validation.UuidValidation(bankAccountId); err != nil {
+		fmt.Println(err.Error())
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
+		return
+	}
+
 	err := bah.db.QueryRow("SELECT user_id FROM bank_accounts WHERE id = $1", bankAccountId).Scan(&id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -183,6 +189,12 @@ func (bah *BankAccountHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if bankAccountId == "" {
 		fmt.Println("userId not found in context")
 		response.Error(w, apierror.ClientBadRequest())
+		return
+	}
+
+	if err := validation.UuidValidation(bankAccountId); err != nil {
+		fmt.Println(err.Error())
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
 		return
 	}
 

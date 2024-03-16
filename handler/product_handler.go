@@ -112,6 +112,12 @@ func (ph *ProductHandler) Show(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validation.UuidValidation(productId); err != nil {
+		fmt.Println(err.Error())
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
+		return
+	}
+
 	if err := ph.db.QueryRow(
 		"SELECT id, name, price, image_url, stock, condition, tags, is_purchasable, purchase_count, user_id  FROM products WHERE products.id = $1",
 		productId).
@@ -235,6 +241,12 @@ func (ph *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validation.UuidValidation(productId); err != nil {
+		fmt.Println(err.Error())
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
+		return
+	}
+
 	err := ph.db.QueryRow("SELECT user_id FROM products WHERE id = $1", productId).Scan(&id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -282,6 +294,12 @@ func (ph *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if productId == "" {
 		fmt.Println("ProductID not found in context")
 		response.Error(w, apierror.ClientBadRequest())
+		return
+	}
+
+	if err := validation.UuidValidation(productId); err != nil {
+		fmt.Println(err.Error())
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
 		return
 	}
 
