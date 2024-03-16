@@ -101,7 +101,7 @@ func (bah *BankAccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 	data.ID = uuid.String()
 
 	response.Success(w, apisuccess.CustomResponse(
-		http.StatusCreated,
+		http.StatusOK,
 		"Bank Account added successfully",
 		data,
 	))

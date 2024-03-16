@@ -94,7 +94,7 @@ func (ph *PaymentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	data.UserId = userId
 
 	response.Success(w, apisuccess.CustomResponse(
-		http.StatusCreated,
+		http.StatusOK,
 		"Payment processed successfully",
 		data,
 	))

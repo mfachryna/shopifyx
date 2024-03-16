@@ -200,7 +200,7 @@ func (ph *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	data.ID = uuid.String()
 
 	response.Success(w, apisuccess.CustomResponse(
-		http.StatusCreated,
+		http.StatusOK,
 		"product added successfully",
 		data,
 	))
