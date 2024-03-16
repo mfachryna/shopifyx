@@ -127,6 +127,7 @@ func (uh *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginData.Password)); err != nil {
 		response.Error(w, apierror.CustomError(400, "Password missmatched"))
+		return
 	}
 
 	tokenString, err := jwt.SignedToken(jwt.Claim{
