@@ -68,7 +68,7 @@ func (im *ImageHandler) Store(w http.ResponseWriter, r *http.Request) {
 
 func UploadImageToS3(fileName string, image multipart.File) (string, error) {
 
-	bucketName := os.Getenv("S3_BASE_URL")
+	bucketName := os.Getenv("S3_BUCKET_NAME")
 	s3Id := os.Getenv("S3_ID")
 	s3SecretKey := os.Getenv("S3_SECRET_KEY")
 
