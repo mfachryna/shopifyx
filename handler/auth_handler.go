@@ -63,8 +63,9 @@ func (uh *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if count > 0 {
-		fmt.Println(err.Error())
-		response.Error(w, apierror.ClientAlreadyExists())
+		err := apierror.ClientAlreadyExists()
+		fmt.Println(err.Message)
+		response.Error(w, err)
 		return
 	}
 

@@ -150,8 +150,9 @@ func (bah *BankAccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id != userId {
-		fmt.Println(err.Error())
-		response.Error(w, apierror.ClientForbidden())
+		err := apierror.ClientForbidden()
+		fmt.Println(err.Message)
+		response.Error(w, err)
 		return
 	}
 
@@ -199,8 +200,9 @@ func (bah *BankAccountHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id != userId {
-		fmt.Println(err.Error())
-		response.Error(w, apierror.ClientForbidden())
+		err := apierror.ClientForbidden()
+		fmt.Println(err.Message)
+		response.Error(w, err)
 		return
 	}
 

@@ -249,8 +249,9 @@ func (ph *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id != userId {
-		fmt.Println(err.Error())
-		response.Error(w, apierror.ClientForbidden())
+		err := apierror.ClientForbidden()
+		fmt.Println(err.Message)
+		response.Error(w, err)
 		return
 	}
 
@@ -298,8 +299,9 @@ func (ph *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id != userId {
-		fmt.Println(err.Error())
-		response.Error(w, apierror.ClientForbidden())
+		err := apierror.ClientForbidden()
+		fmt.Println(err.Message)
+		response.Error(w, err)
 		return
 	}
 
@@ -349,8 +351,9 @@ func (ph *ProductHandler) Stock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id != userId {
-		fmt.Println(err.Error())
-		response.Error(w, apierror.ClientForbidden())
+		err := apierror.ClientForbidden()
+		fmt.Println(err.Message)
+		response.Error(w, err)
 		return
 	}
 

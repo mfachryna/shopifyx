@@ -46,7 +46,7 @@ func (im *ImageHandler) Store(w http.ResponseWriter, r *http.Request) {
 	}
 	// Validate file size
 	if fileHeader.Size > (2 * 1024 * 1024) { // 2 MB
-		fmt.Println(err.Error())
+		fmt.Println("File size exceeds the limit (2MB)")
 		response.Error(w, apierror.CustomError(http.StatusBadRequest, "File size exceeds the limit (2MB)"))
 		return
 	}
