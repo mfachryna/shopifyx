@@ -31,27 +31,29 @@ func NewBankAccountHandler(db *sql.DB, validate *validator.Validate) *BankAccoun
 func (bah *BankAccountHandler) Index(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("user_id").(string)
 	if userId == "" {
+		fmt.Println("userId not found in context")
 		response.Error(w, apierror.CustomError(http.StatusForbidden, "userId not found in context"))
 		return
 	}
 
 	rows, err := bah.db.Query(`SELECT id,bank_name,bank_account_name, bank_account_number FROM bank_accounts WHERE user_id = $1`, userId)
 	if err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError(err.Error()))
 		return
 	}
-	defer rows.Close()
-
 	data := make([]domain.BankAccount, 0)
 	for rows.Next() {
 		var bankAccount domain.BankAccount
 		err := rows.Scan(&bankAccount.ID, &bankAccount.BankName, &bankAccount.BankAccountName, &bankAccount.BankAccountNumber)
 		if err != nil {
+			fmt.Println(err.Error())
 			response.Error(w, apierror.CustomServerError("Error scanning row:"+err.Error()))
 			continue
 		}
 		data = append(data, bankAccount)
 	}
+	rows.Close()
 
 	response.Success(w, apisuccess.CustomResponse(
 		http.StatusOK,
@@ -64,6 +66,7 @@ func (bah *BankAccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var data domain.BankAccount
 
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.ClientBadRequest())
 		return
 	}
@@ -71,6 +74,7 @@ func (bah *BankAccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if err := bah.validate.Struct(data); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
 		for _, e := range validationErrors {
+			fmt.Println(err.Error())
 			response.Error(w, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
 			return
 		}
@@ -78,6 +82,7 @@ func (bah *BankAccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	userId := r.Context().Value("user_id").(string)
 	if userId == "" {
+		fmt.Println("userId not found in context")
 		response.Error(w, apierror.CustomError(http.StatusForbidden, "userId not found in context"))
 		return
 	}
@@ -88,6 +93,7 @@ func (bah *BankAccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 		uuid, data.BankName, data.BankAccountName, data.BankAccountNumber, userId,
 	); err != nil {
 		fmt.Println(err)
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError("failed to insert data"))
 		return
 	}
@@ -108,6 +114,7 @@ func (bah *BankAccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.ClientBadRequest())
 		return
 	}
@@ -115,6 +122,7 @@ func (bah *BankAccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if err := bah.validate.Struct(data); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
 		for _, e := range validationErrors {
+			fmt.Println(err.Error())
 			response.Error(w, apierror.CustomError(http.StatusBadRequest, validation.CustomError(e)))
 			return
 		}
@@ -123,6 +131,7 @@ func (bah *BankAccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("user_id").(string)
 	bankAccountId := chi.URLParam(r, "bankAccountId")
 	if bankAccountId == "" {
+		fmt.Println("BankAccountID not found in context")
 		response.Error(w, apierror.ClientBadRequest())
 		return
 	}
@@ -130,15 +139,18 @@ func (bah *BankAccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 	err := bah.db.QueryRow("SELECT user_id FROM bank_accounts WHERE id = $1", bankAccountId).Scan(&id)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			fmt.Println(err.Error())
 			response.Error(w, apierror.ClientNotFound("Bank Account"))
 			return
 		}
 
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError(err.Error()))
 		return
 	}
 
 	if id != userId {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.ClientForbidden())
 		return
 	}
@@ -148,6 +160,7 @@ func (bah *BankAccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 		data.BankName, data.BankAccountName, data.BankAccountNumber, bankAccountId,
 	)
 	if err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError("failed to update Bank Account"))
 		return
 	}
@@ -167,6 +180,7 @@ func (bah *BankAccountHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	bankAccountId := chi.URLParam(r, "bankAccountId")
 	if bankAccountId == "" {
+		fmt.Println("userId not found in context")
 		response.Error(w, apierror.ClientBadRequest())
 		return
 	}
@@ -174,21 +188,25 @@ func (bah *BankAccountHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	err := bah.db.QueryRow("SELECT user_id FROM bank_accounts WHERE id = $1", bankAccountId).Scan(&id)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			fmt.Println(err.Error())
 			response.Error(w, apierror.ClientNotFound("Bank Account"))
 			return
 		}
 
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError(err.Error()))
 		return
 	}
 
 	if id != userId {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.ClientForbidden())
 		return
 	}
 
 	_, err = bah.db.Exec(`DELETE FROM bank_accounts WHERE id = $1`, bankAccountId)
 	if err != nil {
+		fmt.Println(err.Error())
 		response.Error(w, apierror.CustomServerError("failed to delete Bank Account"))
 		return
 	}
