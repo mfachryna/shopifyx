@@ -9,12 +9,12 @@ type User struct {
 
 type UserRegister struct {
 	Name     string `json:"name" validate:"required,min=5,max=50"`
-	Username string `json:"username" validate:"required,min=5,max=15"`
+	Username string `json:"username" validate:"required,min=5,max=15,noSpace"`
 	Password string `json:"password" validate:"required,min=5,max=15"`
 }
 
 type UserLogin struct {
-	Username string `json:"username" validate:"required,min=5,max=15"`
+	Username string `json:"username" validate:"required,min=5,max=15,noSpace"`
 	Password string `json:"password" validate:"required,min=5,max=15"`
 }
 

@@ -19,7 +19,10 @@ func RegisterCustomValidation(v *validator.Validate) error {
 	}
 
 	if err := v.RegisterValidation("isBool", validateIsBool); err != nil {
-		return fmt.Errorf("failed to register is boolean validation: %s", err)
+		return fmt.Errorf("failed to register boolean validation: %s", err)
+	}
+	if err := v.RegisterValidation("noSpace", validateNoSpace); err != nil {
+		return fmt.Errorf("failed to register username has space: %s", err)
 	}
 
 	return nil
@@ -71,4 +74,9 @@ func imageMaxSizeValidator(fl validator.FieldLevel) bool {
 
 func validateIsBool(fl validator.FieldLevel) bool {
 	return fl.Field().Kind() == reflect.Bool
+}
+
+func validateNoSpace(fl validator.FieldLevel) bool {
+	field := fl.Field().String()
+	return !strings.Contains(field, " ")
 }
