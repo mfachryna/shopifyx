@@ -33,6 +33,16 @@ func OpenPg() (*sql.DB, error) {
 		conf.DbPort,
 		conf.DbName,
 	)
+	if os.Getenv("ENV") == "production" {
+		connStr = fmt.Sprintf(
+			"postgres://%s:%s@%s:%s/%s?sslmode=verify-full sslrootcert=ap-southeast-1-bundle.pem Timezone=UTC",
+			conf.DbUsername,
+			conf.DbPassword,
+			conf.DbHost,
+			conf.DbPort,
+			conf.DbName,
+		)
+	}
 
 	db, err := sql.Open("postgres", connStr)
 
