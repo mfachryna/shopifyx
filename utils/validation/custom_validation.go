@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -79,4 +80,20 @@ func validateIsBool(fl validator.FieldLevel) bool {
 func validateNoSpace(fl validator.FieldLevel) bool {
 	field := fl.Field().String()
 	return !strings.Contains(field, " ")
+}
+
+func UrlValidation(url string) error {
+	pattern := `^(https?|ftp):\/\/[^\s\/$.?#].[^\s]*$`
+
+	regex, err := regexp.Compile(pattern)
+	if err != nil {
+		return fmt.Errorf("failed to compile pattern %v", err)
+	}
+
+	if !regex.MatchString(url) {
+		return fmt.Errorf("url is not valid")
+	}
+
+	return nil
+
 }
