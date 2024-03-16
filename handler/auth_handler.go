@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Croazt/shopifyx/domain"
@@ -46,6 +47,8 @@ func (uh *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	registerData.Username = strings.ToLower(registerData.Username)
 
 	var count int
 	err := uh.db.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", registerData.Username).Scan(&count)
@@ -111,6 +114,8 @@ func (uh *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	loginData.Username = strings.ToLower(loginData.Username)
 
 	var user domain.User
 	err := uh.db.QueryRow("SELECT id,username,name,password FROM users WHERE username = $1 LIMIT 1;", loginData.Username).Scan(&user.ID, &user.Username, &user.Name, &user.Password)
