@@ -81,7 +81,7 @@ func (ph *ProductHandler) Index(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println(err.Error())
 			response.Error(w, apierror.CustomServerError("Error scanning row:"+err.Error()))
-			continue
+			return
 		}
 		data = append(data, product)
 	}
@@ -140,6 +140,8 @@ func (ph *ProductHandler) Show(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, apierror.CustomServerError(err.Error()))
 		return
 	}
+	defer rows.Close()
+
 	productData.Seller.BankAccounts = make([]domain.BankAccount, 0)
 	for rows.Next() {
 		var bankAccount domain.BankAccount
@@ -147,11 +149,10 @@ func (ph *ProductHandler) Show(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println(err.Error())
 			response.Error(w, apierror.CustomServerError("Error scanning row:"+err.Error()))
-			continue
+			return
 		}
 		productData.Seller.BankAccounts = append(productData.Seller.BankAccounts, bankAccount)
 	}
-	rows.Close()
 
 	response.Success(w, apisuccess.CustomResponse(
 		http.StatusOK,

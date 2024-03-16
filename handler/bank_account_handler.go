@@ -49,7 +49,7 @@ func (bah *BankAccountHandler) Index(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println(err.Error())
 			response.Error(w, apierror.CustomServerError("Error scanning row:"+err.Error()))
-			continue
+			return
 		}
 		data = append(data, bankAccount)
 	}
