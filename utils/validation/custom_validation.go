@@ -95,5 +95,19 @@ func UrlValidation(url string) error {
 	}
 
 	return nil
+}
 
+func UuidValidation(uuid string) error {
+	pattern := `^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`
+
+	regex, err := regexp.Compile(pattern)
+	if err != nil {
+		return fmt.Errorf("failed to compile pattern %v", err)
+	}
+
+	if !regex.MatchString(uuid) {
+		return fmt.Errorf("uuid is not valid")
+	}
+
+	return nil
 }
