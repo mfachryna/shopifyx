@@ -1,13 +1,13 @@
 # build app
 .PHONY: build
 build:
-	@go build -o ./app ./
+	@go build -o ./app ./main.go
 
 # build app alpine
 .PHONY: build-alpine
 build-alpine:
 	@go mod tidy && \
-	GOOS=linux GOARCH=amd64 go build -o ./app ./
+	GOOS=linux GOARCH=amd64 go build -o ./app ./main.go
 
 .PHONY: mock-install
 mock-install:

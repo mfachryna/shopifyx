@@ -34,8 +34,10 @@ func main() {
 	flag.StringVar(&migrateCommand, "migrate", "up", "migration")
 	flag.Parse()
 
-	if godotenv.Load() != nil {
-		log.Fatal("error loading .env file")
+	if os.Getenv("ENV") != "production" {
+		if godotenv.Load() != nil {
+			fmt.Println("error loading .env file")
+		}
 	}
 
 	db, err = postgresql.OpenPg()

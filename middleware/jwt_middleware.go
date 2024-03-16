@@ -46,7 +46,7 @@ func JwtMiddleware(next http.Handler) http.Handler {
 		}
 
 		if !token.Valid {
-			fmt.Println(err.Error())
+			fmt.Println("invalid token claims")
 			response.Error(w, apierror.CustomError(http.StatusUnauthorized, "invalid token claims"))
 			return
 		}

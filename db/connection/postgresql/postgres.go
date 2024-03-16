@@ -35,7 +35,7 @@ func OpenPg() (*sql.DB, error) {
 	)
 	if os.Getenv("ENV") == "production" {
 		connStr = fmt.Sprintf(
-			"postgres://%s:%s@%s:%s/%s?sslmode=verify-full sslrootcert=ap-southeast-1-bundle.pem Timezone=UTC",
+			"postgres://%s:%s@%s:%s/%s?sslmode=verify-full&sslrootcert=ap-southeast-1-bundle.pem&Timezone=UTC",
 			conf.DbUsername,
 			conf.DbPassword,
 			conf.DbHost,
