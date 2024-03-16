@@ -65,8 +65,13 @@ func main() {
 		routes.ImageRoute(r, validate)
 		routes.ProductRoute(r, db, validate)
 		routes.BankAccountRoute(r, db, validate)
-
 	})
+
+	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		w.Write([]byte("Not found"))
+	})
+
 	s := &http.Server{
 		Addr:    ":8000",
 		Handler: r,

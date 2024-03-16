@@ -217,6 +217,12 @@ func (ph *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 		data domain.Product
 		id   string
 	)
+	productId := chi.URLParam(r, "productId")
+	if err := validation.UuidValidation(productId); err != nil {
+		fmt.Println(err.Error())
+		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
+		return
+	}
 
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		fmt.Println(err.Error())
@@ -234,16 +240,9 @@ func (ph *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userId := r.Context().Value("user_id").(string)
-	productId := chi.URLParam(r, "productId")
 	if productId == "" {
 		fmt.Println("userId not found in context")
 		response.Error(w, apierror.ClientBadRequest())
-		return
-	}
-
-	if err := validation.UuidValidation(productId); err != nil {
-		fmt.Println(err.Error())
-		response.Error(w, apierror.CustomError(http.StatusBadRequest, err.Error()))
 		return
 	}
 

@@ -31,6 +31,12 @@ func NewPaymentHandler(db *sql.DB, validate *validator.Validate) *PaymentHandler
 func (ph *PaymentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var data domain.Payments
 
+	productId := chi.URLParam(r, "productId")
+	if err := validation.UuidValidation(productId); err != nil {
+		fmt.Println(err.Error())
+		response.Error(w, apierror.CustomError(http.StatusNotFound, err.Error()))
+		return
+	}
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		fmt.Println(err.Error())
 		response.Error(w, apierror.ClientBadRequest())
@@ -58,9 +64,8 @@ func (ph *PaymentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, apierror.CustomServerError("userId not found in context"))
 		return
 	}
-	uuid := uuid.New()
 
-	productId := chi.URLParam(r, "productId")
+	uuid := uuid.New()
 	var count int
 	var sellerId string
 	if err := ph.db.QueryRow(`SELECT COUNT(products.id), products.user_id FROM products JOIN bank_accounts ON products.user_id = bank_accounts.user_id WHERE bank_accounts.id = $1 AND products.id = $2 GROUP BY products.user_id`, data.BankAccountId, productId).Scan(&count, &sellerId); err != nil {
